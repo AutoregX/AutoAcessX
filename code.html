@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AccessLetter - OAuth 2.0</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #121212; /* Темный фон */
+            color: white; /* Светлый текст */
+            margin-top: 50px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #0078D4;
+            color: white;
+            border: none;
+            cursor: not-allowed; /* Изменим курсор на "не доступно" */
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0078D4; /* Убираем изменение фона при наведении */
+        }
+        .image-container {
+            margin: 20px auto;
+            display: flex;
+            justify-content: center;
+            gap: 10px; /* Расстояние между изображениями */
+        }
+        img {
+            width: 50px; /* Размер изображений */
+            height: auto;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to AccessLetter!</h1>
+    <p>This page is required to obtain tokens</p>
+
+    <!-- Кнопка теперь активна -->
+    <button id="loginButton">Login with Microsoft</button>
+
+    <!-- Место для изображений в ряд -->
+    <div class="image-container">
+        <img src="https://i.imgur.com/X4TuEIP.gif" alt="Image 1">
+        <img src="https://i.imgur.com/X4TuEIP.gif" alt="Image 2">
+        <img src="https://i.imgur.com/X4TuEIP.gif" alt="Image 3">
+    </div>
+
+    <script>
+        const clientId = 'ddd2c7a9-4ec4-49b0-be19-89de3d25fbbe'; // Укажите ваш Client ID
+        const redirectUri = 'https://YOUR_USERNAME.github.io/YOUR_REPO_NAME/'; // Укажите ваш Redirect URI
+        const scope = 'openid profile'; // Укажите необходимые области доступа
+        const responseType = 'code';
+        const codeChallengeMethod = 'S256';
+
+        // Генерация code_verifier и code_challenge для PKCE
+        function generateCodeVerifier() {
+            const length = 43;
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return result;
+        }
+
+        function generateCodeChallenge(codeVerifier) {
+            const hash = new TextEncoder().encode(codeVerifier);
+            return window.crypto.subtle.digest('SHA-256', hash).then(function(digest) {
+                let base64url = btoa(String.fromCharCode.apply(null, new Uint8Array(digest)))
+                    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                return base64url;
+            });
+        }
+
+        document.getElementById('loginButton').onclick = function() {
+            const codeVerifier = generateCodeVerifier();
+            generateCodeChallenge(codeVerifier).then(function(codeChallenge) {
+                const authorizationUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?` +
+                    `client_id=${clientId}&` +
+                    `response_type=${responseType}&` +
+                    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                    `scope=${encodeURIComponent(scope)}&` +
+                    `code_challenge=${codeChallenge}&` +
+                    `code_challenge_method=${codeChallengeMethod}`;
+
+                // Перенаправление на страницу авторизации
+                window.location.href = authorizationUrl;
+
+                // Сохраните code_verifier для дальнейшего обмена
+                sessionStorage.setItem('code_verifier', codeVerifier);
+            });
+        };
+    </script>
+</body>
+</html>
